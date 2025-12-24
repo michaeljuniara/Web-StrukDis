@@ -1,19 +1,293 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-    <title>Spin Wheel Untuk Tempat Duduk</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengatur Denah Anti-Circle</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { color: #333; }
+
+        /* --- INPUT SECTION --- */
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+
+        .input-group-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .circle-card {
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .circle-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-dot {
+            width: 15px; height: 15px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        textarea {
+            width: 100%;
+            height: 60px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 5px;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-add { background-color: #2ecc71; color: white; }
+        .btn-add:hover { background-color: #27ae60; }
+
+        .btn-gen { background-color: #3498db; color: white; }
+        .btn-gen:hover { background-color: #2980b9; }
+
+        input[type="number"] {
+            width: 50px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        /* --- OUTPUT SECTION (CLASSROOM) --- */
+        #classroom {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+            /* Grid template akan di-set lewat JS */
+        }
+
+        .desk {
+            width: 100px;
+            height: 80px;
+            background-color: #e0e0e0; /* Warna meja default */
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 0 #bbb; /* Efek 3D meja */
+            position: relative;
+            transition: transform 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .desk:hover { transform: translateY(-2px); }
+
+        .student-name {
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+            z-index: 2;
+        }
+
+        .circle-label {
+            font-size: 10px;
+            margin-top: 4px;
+            background: rgba(255,255,255,0.7);
+            padding: 2px 6px;
+            border-radius: 10px;
+            color: #000;
+        }
+
+        .empty-desk {
+            background-color: #f0f0f0;
+            color: #aaa;
+            box-shadow: none;
+            border: 2px dashed #ccc;
+        }
+
+    </style>
 </head>
 <body>
-    <div class="main">
-        <title class="navbar"></title>
-            <div class="icon">
-                <h1 class="logo">StrukDis Mantap</h1>
-            </div>
-            <h1 class="tombol">Start</h1>
-        </title>
-    
-    </div>
-</body>
 
+    <h1>🏫 Pengatur Tempat Duduk Anti-Circle</h1>
+
+    <div class="controls">
+        <div id="inputContainer" class="input-group-container">
+            </div>
+
+        <div class="actions">
+            <button class="btn-add" onclick="addNewCircle()">+ Tambah Warna</button>
+            
+            <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
+                <label>Baris: <input type="number" id="rows" value="3"></label>
+                <label>Kolom: <input type="number" id="cols" value="4"></label>
+                <button class="btn-gen" onclick="generateLayout()">GENERATE DENAH</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="classroom"></div>
+
+    <script>
+        // Data Warna Default
+        const colors = [
+            { name: "Merah", hex: "#ffadad" },
+            { name: "Biru", hex: "#a0c4ff" },
+            { name: "Hijau", hex: "#caffbf" },
+            { name: "Kuning", hex: "#fdffb6" },
+            { name: "Ungu", hex: "#bdb2ff" },
+            { name: "Oranye", hex: "#ffd6a5" }
+        ];
+
+        let activeCircles = 0;
+
+        // Fungsi saat pertama kali load (munculkan Merah & Biru)
+        window.onload = function() {
+            addNewCircle(); // Merah
+            addNewCircle(); // Biru
+        };
+
+        // 1. Fungsi Menambah Input Circle Baru
+        function addNewCircle() {
+            if (activeCircles >= colors.length) {
+                alert("Warna habis! Tambahkan manual di kode jika butuh lebih.");
+                return;
+            }
+
+            const colorData = colors[activeCircles];
+            const container = document.getElementById('inputContainer');
+            
+            const div = document.createElement('div');
+            div.className = 'circle-card';
+            div.innerHTML = `
+                <div class="circle-header">
+                    <span class="color-dot" style="background:${colorData.hex}"></span>
+                    ${colorData.name}
+                </div>
+                <textarea id="input-${activeCircles}" placeholder="Masukkan nama (pisahkan koma/enter)..."></textarea>
+            `;
+            
+            container.appendChild(div);
+            activeCircles++;
+        }
+
+        // 2. Fungsi Utama: Generate Logika
+        function generateLayout() {
+            const rowCount = parseInt(document.getElementById('rows').value);
+            const colCount = parseInt(document.getElementById('cols').value);
+            
+            // --- STEP A: Ambil Data dari Input ---
+            let groups = {};
+            let maxStudentsInGroup = 0;
+
+            for (let i = 0; i < activeCircles; i++) {
+                const rawText = document.getElementById(`input-${i}`).value;
+                // Pisahkan berdasarkan koma atau enter, lalu hapus spasi kosong
+                const names = rawText.split(/[\n,]+/).map(s => s.trim()).filter(s => s !== "");
+                
+                if (names.length > 0) {
+                    groups[colors[i].name] = {
+                        names: names,
+                        hex: colors[i].hex
+                    };
+                    if (names.length > maxStudentsInGroup) maxStudentsInGroup = names.length;
+                }
+            }
+
+            // --- STEP B: Logika Round Robin (Selang-seling) ---
+            let sortedList = [];
+            const groupKeys = Object.keys(groups);
+
+            // Loop sebanyak jumlah siswa terbanyak
+            for (let i = 0; i < maxStudentsInGroup; i++) {
+                // Ambil 1 dari tiap warna secara bergiliran
+                groupKeys.forEach(key => {
+                    if (groups[key].names[i]) {
+                        sortedList.push({
+                            name: groups[key].names[i],
+                            colorName: key,
+                            hex: groups[key].hex
+                        });
+                    }
+                });
+            }
+
+            // --- STEP C: Render ke Grid HTML ---
+            renderGrid(sortedList, rowCount, colCount);
+        }
+
+        // 3. Fungsi Render Tampilan
+        function renderGrid(studentList, rows, cols) {
+            const classroom = document.getElementById('classroom');
+            classroom.innerHTML = ""; // Bersihkan lama
+            
+            // Atur CSS Grid Layout
+            classroom.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+            const totalSeats = rows * cols;
+
+            // Loop untuk membuat Kursi
+            for (let i = 0; i < totalSeats; i++) {
+                const desk = document.createElement('div');
+                
+                if (i < studentList.length) {
+                    // Ada Siswanya
+                    const data = studentList[i];
+                    desk.className = 'desk';
+                    desk.style.backgroundColor = data.hex; // Warna background meja sesuai circle
+                    desk.innerHTML = `
+                        <span class="student-name">${data.name}</span>
+                        <span class="circle-label">${data.colorName}</span>
+                    `;
+                } else {
+                    // Kursi Kosong
+                    desk.className = 'desk empty-desk';
+                    desk.innerHTML = `<span style="font-size:12px">Kosong</span>`;
+                }
+                
+                classroom.appendChild(desk);
+            }
+        }
+    </script>
+</body>
 </html>
