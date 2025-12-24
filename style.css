@@ -1,0 +1,45 @@
+*{
+    margin: 0;
+    padding: 0;
+    scrollbar-width: none;
+    border-color: cyan;
+    border-style:ridge;
+}
+.main{
+    width: 100%;
+    background: url(download.jpg);
+    background-position: center;
+    background-size:cover;
+    height: 109vh;
+    /* background-attachment: fixed; */
+
+}
+.disclaimer{
+    font-size: 12px;
+    margin-top: 0%;
+    border-top: 0;
+    border-top-width: 0;
+    border-bottom-style: inset  ;
+    border-bottom-color: pink   ;
+    background-color: black;
+    border: 0cap;
+}
+.logo{
+    border-bottom-width:0px;
+    border-bottom: 0;
+    margin-bottom: 0;
+    background-color: black;
+    border: 0cap;
+}
+.icon{
+    margin-top: 0%;
+    border-top: 0;
+    border-top-width: 0;
+    border-bottom-style: groove  ;
+    border-top-color: black;
+}
+.tombol{
+    color: black;
+    font-size: 100px;
+    border:0;
+}
