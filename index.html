@@ -13,6 +13,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            scrollbar-width: 0;
         }
 
         h1 { color: #333; }
@@ -156,11 +157,12 @@
             </div>
 
         <div class="actions">
-            <button class="btn-add" onclick="addNewCircle()">+ Tambah Warna</button>
+            <button class="btn-add" onclick="addNewCircle()">+ Tambah Grup  </button>
             
             <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
-                <label>Baris: <input type="number" id="rows" value="3"></label>
-                <label>Kolom: <input type="number" id="cols" value="4"></label>
+                <label>Baris: <input type="number" id="rows" value="0" min="0" step="1" inputmode="numeric" pattern="[0-9]*" oninput="preventInvalidNumberInput(this)"></label>
+                <label>Kolom: <input type="number" id="cols" value="0" min="0" step="1" inputmode="numeric" pattern="[0-9]*" oninput="preventInvalidNumberInput(this)"></label>
+
                 <button class="btn-gen" onclick="generateLayout()">GENERATE DENAH</button>
             </div>
         </div>
@@ -169,125 +171,152 @@
     <div id="classroom"></div>
 
     <script>
-        // Data Warna Default
-        const colors = [
-            { name: "Merah", hex: "#ffadad" },
-            { name: "Biru", hex: "#a0c4ff" },
-            { name: "Hijau", hex: "#caffbf" },
-            { name: "Kuning", hex: "#fdffb6" },
-            { name: "Ungu", hex: "#bdb2ff" },
-            { name: "Oranye", hex: "#ffd6a5" }
-        ];
+    const colors = [
+        { name: "Merah", hex: "#ffadad" },
+        { name: "Kuning", hex: "#fdffb6" },
+        { name: "Hijau", hex: "#caffbf" },
+        { name: "Biru", hex: "#a0c4ff" },
+        { name: "Ungu", hex: "#bdb2ff" },
+        { name: "Oranye", hex: "#ffd6a5" }
+    ];
 
-        let activeCircles = 0;
+    let activeCircles = 0;
 
-        // Fungsi saat pertama kali load (munculkan Merah & Biru)
-        window.onload = function() {
-            addNewCircle(); // Merah
-            addNewCircle(); // Biru
-        };
+    window.onload = () => {
+        addNewCircle();
+        addNewCircle();
+    };
 
-        // 1. Fungsi Menambah Input Circle Baru
-        function addNewCircle() {
-            if (activeCircles >= colors.length) {
-                alert("Warna habis! Tambahkan manual di kode jika butuh lebih.");
-                return;
-            }
-
-            const colorData = colors[activeCircles];
-            const container = document.getElementById('inputContainer');
-            
-            const div = document.createElement('div');
-            div.className = 'circle-card';
-            div.innerHTML = `
-                <div class="circle-header">
-                    <span class="color-dot" style="background:${colorData.hex}"></span>
-                    ${colorData.name}
-                </div>
-                <textarea id="input-${activeCircles}" placeholder="Masukkan nama (pisahkan koma/enter)..."></textarea>
-            `;
-            
-            container.appendChild(div);
-            activeCircles++;
+    function addNewCircle() {
+        if (activeCircles >= colors.length) {
+            alert("Maksimal 6 grup");
+            return;
         }
 
-        // 2. Fungsi Utama: Generate Logika
-        function generateLayout() {
-            const rowCount = parseInt(document.getElementById('rows').value);
-            const colCount = parseInt(document.getElementById('cols').value);
-            
-            // --- STEP A: Ambil Data dari Input ---
-            let groups = {};
-            let maxStudentsInGroup = 0;
+        const color = colors[activeCircles];
+        const div = document.createElement("div");
+        div.className = "circle-card";
+        div.innerHTML = `
+            <div class="circle-header">
+                <span class="color-dot" style="background:${color.hex}"></span>
+                ${color.name}
+            </div>
+            <textarea id="input-${activeCircles}" placeholder="Nama dipisah koma / enter"></textarea>
+        `;
+        document.getElementById("inputContainer").appendChild(div);
+        activeCircles++;
+    }
 
-            for (let i = 0; i < activeCircles; i++) {
-                const rawText = document.getElementById(`input-${i}`).value;
-                // Pisahkan berdasarkan koma atau enter, lalu hapus spasi kosong
-                const names = rawText.split(/[\n,]+/).map(s => s.trim()).filter(s => s !== "");
-                
-                if (names.length > 0) {
-                    groups[colors[i].name] = {
-                        names: names,
-                        hex: colors[i].hex
-                    };
-                    if (names.length > maxStudentsInGroup) maxStudentsInGroup = names.length;
+    function generateLayout() {
+        const rows = +document.getElementById("rows").value;
+        const cols = +document.getElementById("cols").value;
+
+        let groups = {};
+        let maxLen = 0;
+
+        for (let i = 0; i < activeCircles; i++) {
+            const raw = document.getElementById(`input-${i}`).value;
+            const names = raw.split(/[\n,]+/).map(x => x.trim()).filter(Boolean);
+            if (names.length) {
+                groups[colors[i].name] = {
+                    names,
+                    hex: colors[i].hex
+                };
+                maxLen = Math.max(maxLen, names.length);
+            }
+        }
+
+        // Round-robin list
+        let students = [];
+        const keys = Object.keys(groups);
+        for (let i = 0; i < maxLen; i++) {
+            keys.forEach(k => {
+                if (groups[k].names[i]) {
+                    students.push({
+                        name: groups[k].names[i],
+                        group: k,
+                        hex: groups[k].hex
+                    });
+                }
+            });
+        }
+
+        renderGridSafe(students, rows, cols);
+    }
+    function renderGridSafe(students, rows, cols) {
+        const classroom = document.getElementById("classroom");
+        classroom.innerHTML = "";
+        classroom.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+        const total = rows * cols;
+        let grid = Array(total).fill(null);
+
+        function isValid(pos, student) {
+            const r = Math.floor(pos / cols);
+            const c = pos % cols;
+
+            const neighbors = [
+                [r - 1, c],
+                [r + 1, c],
+                [r, c - 1],
+                [r, c + 1]
+            ];
+
+            return neighbors.every(([nr, nc]) => {
+                if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) return true;
+                const idx = nr * cols + nc;
+                return !grid[idx] || grid[idx].group !== student.group;
+            });
+        }
+
+        function backtrack(index) {
+            if (index === students.length) return true;
+
+            for (let pos = 0; pos < total; pos++) {
+                if (!grid[pos] && isValid(pos, students[index])) {
+                    grid[pos] = students[index];
+                    if (backtrack(index + 1)) return true;
+                    grid[pos] = null; // undo
                 }
             }
-
-            // --- STEP B: Logika Round Robin (Selang-seling) ---
-            let sortedList = [];
-            const groupKeys = Object.keys(groups);
-
-            // Loop sebanyak jumlah siswa terbanyak
-            for (let i = 0; i < maxStudentsInGroup; i++) {
-                // Ambil 1 dari tiap warna secara bergiliran
-                groupKeys.forEach(key => {
-                    if (groups[key].names[i]) {
-                        sortedList.push({
-                            name: groups[key].names[i],
-                            colorName: key,
-                            hex: groups[key].hex
-                        });
-                    }
-                });
-            }
-
-            // --- STEP C: Render ke Grid HTML ---
-            renderGrid(sortedList, rowCount, colCount);
+            return false;
         }
 
-        // 3. Fungsi Render Tampilan
-        function renderGrid(studentList, rows, cols) {
-            const classroom = document.getElementById('classroom');
-            classroom.innerHTML = ""; // Bersihkan lama
-            
-            // Atur CSS Grid Layout
-            classroom.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-
-            const totalSeats = rows * cols;
-
-            // Loop untuk membuat Kursi
-            for (let i = 0; i < totalSeats; i++) {
-                const desk = document.createElement('div');
-                
-                if (i < studentList.length) {
-                    // Ada Siswanya
-                    const data = studentList[i];
-                    desk.className = 'desk';
-                    desk.style.backgroundColor = data.hex; // Warna background meja sesuai circle
-                    desk.innerHTML = `
-                        <span class="student-name">${data.name}</span>
-                        <span class="circle-label">${data.colorName}</span>
-                    `;
-                } else {
-                    // Kursi Kosong
-                    desk.className = 'desk empty-desk';
-                    desk.innerHTML = `<span style="font-size:12px">Kosong</span>`;
-                }
-                
-                classroom.appendChild(desk);
-            }
+        if (!backtrack(0)) {
+            alert("❌ Tidak ada solusi valid");
+            return;
         }
-    </script>
+
+        for (let i = 0; i < total; i++) {
+            const desk = document.createElement("div");
+
+            if (grid[i]) {
+                desk.className = "desk";
+                desk.style.backgroundColor = grid[i].hex;
+                desk.innerHTML = `
+                    <span class="student-name">${grid[i].name}</span>
+                    <span class="circle-label">${grid[i].group}</span>
+                `;
+            } else {
+                desk.className = "desk empty-desk";
+                desk.innerHTML = `<span style="font-size:12px">Kosong</span>`;
+            }
+
+            classroom.appendChild(desk);
+        }
+    }
+    function preventInvalidNumberInput(input) {
+    // Hapus semua selain digit 0–9
+    input.value = input.value.replace(/[^0-9]/g, '');
+
+    // Hilangkan leading zero (kecuali "0")
+    input.value = input.value.replace(/^0+(?=\d)/, '');
+
+    // Jika kosong, set ke 0
+    if (input.value === '') input.value = '0';
+}
+
+</script>
+
 </body>
 </html>
