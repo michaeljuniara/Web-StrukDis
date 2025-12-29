@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pengatur Denah Anti-Nyontek</title>
+    <title>Pengatur Denah Anti Nyontek</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -16,7 +16,7 @@
             scrollbar-width: 0;
         }
 
-        h1 { color: #333; }
+        h1 { color: #333; text-align: center; }
 
         /* --- INPUT SECTION --- */
         .controls {
@@ -74,6 +74,7 @@
             align-items: center;
             border-top: 1px solid #eee;
             padding-top: 15px;
+            flex-wrap: wrap;
         }
 
         button {
@@ -109,34 +110,41 @@
         .desk {
             width: 100px;
             height: 80px;
-            background-color: #e0e0e0; /* Warna meja default */
+            /* background-color diset via JS */
             border-radius: 8px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 0 #bbb; /* Efek 3D meja */
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
             position: relative;
             transition: transform 0.2s;
-            border: 2px solid transparent;
+            border: 1px solid rgba(0,0,0,0.1);
         }
 
         .desk:hover { transform: translateY(-2px); }
 
         .student-name {
             font-weight: bold;
-            font-size: 16px;
+            font-size: 14px;
             color: #333;
             z-index: 2;
+            text-align: center;
+            padding: 0 5px;
+            text-shadow: 0 0 2px rgba(255,255,255,0.8);
         }
 
         .circle-label {
-            font-size: 10px;
+            font-size: 9px;
             margin-top: 4px;
-            background: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.85);
             padding: 2px 6px;
             border-radius: 10px;
             color: #000;
+            max-width: 90%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .empty-desk {
@@ -150,14 +158,14 @@
 </head>
 <body>
 
-    <h1>🏫 Pengatur Tempat Duduk Anti-Nyontek</h1>
+    <h1>Pengatur Denah Anti Nyontek</h1>
 
     <div class="controls">
         <div id="inputContainer" class="input-group-container">
             </div>
 
         <div class="actions">
-            <button class="btn-add" onclick="addNewCircle()">+ Tambah Grup  </button>
+            <button class="btn-add" onclick="addNewCircle()">+ Tambah Grup</button>
             
             <div style="margin-left: auto; display: flex; gap: 10px; align-items: center;">
                 <label>Baris: <input type="number" id="rows" value="0" min="0" step="1" inputmode="numeric" pattern="[0-9]*" oninput="preventInvalidNumberInput(this)"></label>
@@ -166,6 +174,9 @@
                 <button class="btn-gen" onclick="generateLayout()">GENERATE DENAH</button>
             </div>
         </div>
+        <!-- <small style="display:block; margin-top:10px; color:#666;">
+            *Tips: Jika nama siswa sama di 2 grup berbeda, dia tidak akan duduk dekat siswa dari KEDUA grup tersebut.
+        </small> -->
     </div>
 
     <div id="classroom"></div>
@@ -177,7 +188,9 @@
         { name: "Hijau", hex: "#caffbf" },
         { name: "Biru", hex: "#a0c4ff" },
         { name: "Ungu", hex: "#bdb2ff" },
-        { name: "Oranye", hex: "#ffd6a5" }
+        { name: "Oranye", hex: "#ffd6a5" },
+        { name: "Abu", hex: "#dcdcdc" },
+        { name: "Pink", hex: "#ffc6ff" }
     ];
 
     let activeCircles = 0;
@@ -189,7 +202,7 @@
 
     function addNewCircle() {
         if (activeCircles >= colors.length) {
-            alert("Maksimal 6 grup");
+            alert("Maksimal " + colors.length + " grup");
             return;
         }
 
@@ -207,97 +220,171 @@
         activeCircles++;
     }
 
+    function preventInvalidNumberInput(input) {
+        input.value = input.value.replace(/[^0-9]/g, '');
+        input.value = input.value.replace(/^0+(?=\d)/, '');
+        if (input.value === '') input.value = '0';
+    }
+
+    // --- ALGORITMA UTAMA DIPERBARUI DI SINI ---
     function generateLayout() {
         const rows = +document.getElementById("rows").value;
         const cols = +document.getElementById("cols").value;
 
-        let groups = {};
-        let maxLen = 0;
+        // 1. Parsing Input & Merging Duplicates
+        // Kita pakai Map untuk menggabungkan nama yang sama menjadi satu entity
+        let studentMap = {};
 
         for (let i = 0; i < activeCircles; i++) {
             const raw = document.getElementById(`input-${i}`).value;
+            // Split by newline or comma
             const names = raw.split(/[\n,]+/).map(x => x.trim()).filter(Boolean);
-            if (names.length) {
-                groups[colors[i].name] = {
-                    names,
-                    hex: colors[i].hex
-                };
-                maxLen = Math.max(maxLen, names.length);
-            }
-        }
-
-        // Round-robin list
-        let students = [];
-        const keys = Object.keys(groups);
-        for (let i = 0; i < maxLen; i++) {
-            keys.forEach(k => {
-                if (groups[k].names[i]) {
-                    students.push({
-                        name: groups[k].names[i],
-                        group: k,
-                        hex: groups[k].hex
-                    });
+            
+            names.forEach(name => {
+                // Key dinormalisasi (lowercase) agar case-insensitive
+                const key = name.toLowerCase();
+                
+                if (!studentMap[key]) {
+                    studentMap[key] = {
+                        displayName: name,
+                        groups: [],     // Array menyimpan nama grup (Merah, Biru, dll)
+                        hexColors: []   // Array menyimpan kode warna
+                    };
+                }
+                
+                // Cek agar tidak memasukkan grup yang sama 2x (misal user tulis nama 2x di kotak sama)
+                if (!studentMap[key].groups.includes(colors[i].name)) {
+                    studentMap[key].groups.push(colors[i].name);
+                    studentMap[key].hexColors.push(colors[i].hex);
                 }
             });
         }
 
+        // 2. Convert Map kembali ke Array of Objects
+        const students = Object.values(studentMap);
+
+        // Sorting opsional: Anak dengan banyak circle (konflik tinggi) sebaiknya diproses duluan
+        // agar backtrack lebih efisien, tapi untuk jumlah kecil tidak wajib.
+        students.sort((a, b) => b.groups.length - a.groups.length);
+
         renderGridSafe(students, rows, cols);
     }
+
     function renderGridSafe(students, rows, cols) {
         const classroom = document.getElementById("classroom");
         classroom.innerHTML = "";
+        
+        // Safety check
+        if (rows * cols < students.length) {
+            alert(`Jumlah kursi (${rows*cols}) kurang dari jumlah siswa (${students.length})!`);
+            return;
+        }
+
         classroom.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
         const total = rows * cols;
         let grid = Array(total).fill(null);
 
-        function isValid(pos, student) {
+        // --- CONSTRAINT LOGIC BARU ---
+        function hasConflict(studentA, studentB) {
+            // Jika salah satu kosong, tidak ada konflik
+            if (!studentA || !studentB) {
+                return false;
+            }
+
+            // Cek irisan (Intersection) Grup
+            // Konflik terjadi jika Student A dan Student B berbagi setidaknya SATU grup yang sama
+            const intersection = studentA.groups.filter(group => studentB.groups.includes(group));
+            
+            return intersection.length > 0;
+        }
+
+        function isValid(pos, studentToPlace) {
             const r = Math.floor(pos / cols);
             const c = pos % cols;
 
             const neighbors = [
-                [r - 1, c],
-                [r + 1, c],
-                [r, c - 1],
-                [r, c + 1]
+                [r - 1, c], // Atas
+                [r + 1, c], // Bawah
+                [r, c - 1], // Kiri
+                [r, c + 1]  // Kanan
             ];
 
             return neighbors.every(([nr, nc]) => {
-                if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) return true;
+                // Jika tetangga di luar batas grid, aman
+                if (nr < 0 || nr >= rows || nc < 0 || nc >= cols){
+                     return true;
+                }
+                
                 const idx = nr * cols + nc;
-                return !grid[idx] || grid[idx].group !== student.group;
+                const neighbor = grid[idx];
+
+                // Jika kursi tetangga masih kosong, aman
+                if (!neighbor){
+                    return true;
+                }
+
+                // Cek konflik dengan logika baru
+                return !hasConflict(studentToPlace, neighbor);
             });
         }
 
         function backtrack(index) {
-            if (index === students.length) return true;
+            // Base case: semua siswa sudah duduk
+            if (index === students.length) {
+                return true;
+            }
 
+            // Coba taruh siswa saat ini (students[index]) di setiap kursi kosong
             for (let pos = 0; pos < total; pos++) {
                 if (!grid[pos] && isValid(pos, students[index])) {
-                    grid[pos] = students[index];
-                    if (backtrack(index + 1)) return true;
-                    grid[pos] = null; // undo
+                    grid[pos] = students[index]; // Place
+                    
+                    if (backtrack(index + 1)){
+                        return true; // Recurse
+                    }
+                    
+                    grid[pos] = null; // Backtrack (Undo)
                 }
             }
             return false;
         }
 
+        // Jalankan Backtracking
+        // Kita acak sedikit posisi awal loop di dalam backtrack agar hasil variatif? 
+        // Untuk sederhananya kita pakai urutan kursi 0..total dulu.
         if (!backtrack(0)) {
-            alert("❌ Tidak ada solusi valid");
+            alert("❌ Tidak ada solusi valid! Coba perbesar ukuran kelas atau kurangi siswa dengan grup ganda.");
+            // Render apa adanya (opsional) atau kosongkan
+            // classroom.innerHTML = "Gagal generate"; 
             return;
         }
 
+        // Render Hasil ke HTML
         for (let i = 0; i < total; i++) {
             const desk = document.createElement("div");
+            const data = grid[i];
 
-            if (grid[i]) {
+            if (data) {
                 desk.className = "desk";
-                desk.style.backgroundColor = grid[i].hex;
+                
+                // Logic pewarnaan Multi-Circle
+                if (data.hexColors.length === 1) {
+                    desk.style.backgroundColor = data.hexColors[0];
+                } else {
+                    // Jika > 1 grup, buat gradient diagonal
+                    const gradientColors = data.hexColors.join(", ");
+                    desk.style.background = `linear-gradient(135deg, ${gradientColors})`;
+                }
+
+                const groupsLabel = data.groups.join(" & ");
+
                 desk.innerHTML = `
-                    <span class="student-name">${grid[i].name}</span>
-                    <span class="circle-label">${grid[i].group}</span>
+                    <span class="student-name">${data.displayName}</span>
+                    <span class="circle-label" title="${groupsLabel}">${groupsLabel}</span>
                 `;
-            } else {
+            } 
+            else {
                 desk.className = "desk empty-desk";
                 desk.innerHTML = `<span style="font-size:12px">Kosong</span>`;
             }
@@ -305,19 +392,7 @@
             classroom.appendChild(desk);
         }
     }
-    function preventInvalidNumberInput(input) {
-    // Hapus semua selain digit 0–9
-    input.value = input.value.replace(/[^0-9]/g, '');
-
-    // Hilangkan leading zero (kecuali "0")
-    input.value = input.value.replace(/^0+(?=\d)/, '');
-
-    // Jika kosong, set ke 0
-    if (input.value === '') input.value = '0';
-}
-
-</script>
+    </script>
 
 </body>
 </html>
-
