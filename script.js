@@ -133,25 +133,25 @@ function renderGridSafe(students, rows, cols) {
         });
     }
 
-    function backtrack(index) {
-  
-        if (index === students.length) {
-            return true;
-        }
-
-        for (let pos = 0; pos < total; pos++) {
-            if (!grid[pos] && isValid(pos, students[index])) {
-                grid[pos] = students[index];
-
-                if (backtrack(index + 1)) {
-                    return true; 
-                }
-
-                grid[pos] = null; 
+        function backtrack(index) {
+    
+            if (index === students.length) {
+                return true;
             }
+
+            for (let pos = 0; pos < total; pos++) {
+                if (!grid[pos] && isValid(pos, students[index])) {
+                    grid[pos] = students[index];
+
+                    if (backtrack(index + 1)) {
+                        return true; 
+                    }
+
+                    grid[pos] = null; 
+                }
+            }
+            return false;
         }
-        return false;
-    }
 
     if (!backtrack(0)) {
         alert("❌ Tidak ada solusi valid! Coba perbesar ukuran kelas atau kurangi siswa dengan grup ganda.");
@@ -161,24 +161,29 @@ function renderGridSafe(students, rows, cols) {
     for (let i = 0; i < total; i++) {
         const desk = document.createElement("div");
         const data = grid[i];
-
         if (data) {
             desk.className = "desk";
 
             if (data.hexColors.length === 1) {
                 desk.style.backgroundColor = data.hexColors[0];
             } else {
-                const gradientColors = data.hexColors.join(", ");
-                desk.style.background = `linear-gradient(135deg, ${gradientColors})`;
+                desk.style.background = `linear-gradient(135deg, ${data.hexColors.join(", ")})`;
             }
 
-            const groupsLabel = data.groups.join(" & ");
-
+            const fullGroupLabel = data.groups.join(", ");
             desk.innerHTML = `
-                    <span class="student-name">${data.displayName}</span>
-                    <span class="circle-label" title="${groupsLabel}">${groupsLabel}</span>
-                `;
+                <span class="student-name">${data.displayName}</span>
+                <span class="circle-label clickable" title="Klik untuk lihat semua grup">
+                    ${fullGroupLabel}
+                </span>
+            `;
+
+            desk.querySelector(".circle-label").onclick = (e) => {
+                e.stopPropagation();
+                alert(`Nama: ${data.displayName}\nGrup: ${fullGroupLabel}`);
+            };
         }
+
         else {
             desk.className = "desk empty-desk";
             desk.innerHTML = `<span style="font-size:12px">Kosong</span>`;
@@ -187,5 +192,3 @@ function renderGridSafe(students, rows, cols) {
         classroom.appendChild(desk);
     }
 }
-
-
