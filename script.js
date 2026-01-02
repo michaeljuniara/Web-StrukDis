@@ -1,12 +1,13 @@
 const colors = [
-    { name: "Merah", hex: "#ffadad" },
-    { name: "Kuning", hex: "#fdffb6" },
-    { name: "Hijau", hex: "#caffbf" },
-    { name: "Biru", hex: "#a0c4ff" },
-    { name: "Ungu", hex: "#bdb2ff" },
-    { name: "Oranye", hex: "#ffd6a5" },
-    { name: "Abu", hex: "#dcdcdc" },
-    { name: "Pink", hex: "#ffc6ff" }
+    { name: "Teal", hex: "#B2DFDB" },
+    { name: "Kuning", hex: "#FFF9C4" },
+    { name: "Hijau", hex: "#C8E6C9" },
+    { name: "Biru", hex: "#BBDEFB" },
+    { name: "Ungu", hex: "#E1BEE7" },
+    { name: "Oranye", hex: "#FFE0B2" },
+    { name: "Abu-abu", hex: "#ECEFF1" },
+    { name: "Pink", hex: "#F8BBD0" },
+    { name: "Lime", hex: "#F0F4C3"}
 ];
 
 let activeCircles = 0;
@@ -186,4 +187,5 @@ function renderGridSafe(students, rows, cols) {
         classroom.appendChild(desk);
     }
 }
+
 
