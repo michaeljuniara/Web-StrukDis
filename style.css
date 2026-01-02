@@ -158,3 +158,12 @@ input[type="number"] {
     border: 2px dashed #ccc;
 }
 
+.circle-label.clickable {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.circle-label.clickable:hover {
+    background: #fff;
+    text-decoration: underline;
+}
