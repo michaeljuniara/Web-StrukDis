@@ -1,9 +1,6 @@
-Pengatur Denah Tempat Duduk Anti-Circle
+Pengatur Denah Tempat Duduk Anti Nyontek
 
 Aplikasi web sederhana untuk mengatur tempat duduk siswa agar siswa dari grup yang sama tidak duduk bersebelahan.
-Project ini dibuat sebagai bagian dari Tugas Besar Struktur Diskrit.
-
----
 
 Fitur
 - Mengatur denah kelas berbasis baris dan kolom
@@ -12,29 +9,25 @@ Fitur
 - Validasi input (tidak boleh minus / simbol)
 - Backtracking untuk mencari solusi tempat duduk yang valid
 
----
-
-Teknologi
+Memakai bahsa pemrograman
 - HTML5
 - CSS3
 - JavaScript (Vanilla JS)
 - Algorithm: Backtracking + Graph Coloring sederhana
-
----
 
 Cara Menjalankan
 1. Clone atau download repository ini
 2. Buka file `index.html` menggunakan browser
 3. Tidak membutuhkan server atau instalasi tambahan
 
----
-
 Cara Menggunakan
 1. Masukkan nama siswa pada masing-masing grup  
    (pisahkan dengan koma atau baris baru)
-2. Tentukan jumlah baris dan kolom kelas
-3. Klik **Generate Denah**
-4. Sistem akan menampilkan susunan kursi yang valid
+   <img width="2195" height="902" alt="image" src="https://github.com/user-attachments/assets/8873f3b1-a692-4701-9b9a-ed777c7ffe43" />
+
+3. Tentukan jumlah baris dan kolom kelas
+4. Klik **Generate Denah**
+5. Sistem akan menampilkan susunan kursi yang valid
 
 ---
 
