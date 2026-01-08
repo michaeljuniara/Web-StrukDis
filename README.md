@@ -1,11 +1,11 @@
-# 🏫 Pengatur Denah Tempat Duduk Anti-Circle
+Pengatur Denah Tempat Duduk Anti-Circle
 
 Aplikasi web sederhana untuk mengatur tempat duduk siswa agar siswa dari grup yang sama tidak duduk bersebelahan.
 Project ini dibuat sebagai bagian dari Tugas Besar Struktur Diskrit.
 
 ---
 
-## ✨ Fitur
+Fitur
 - Mengatur denah kelas berbasis baris dan kolom
 - Setiap siswa hanya boleh duduk bersebelahan dengan siswa dari grup berbeda
 - Pewarnaan kursi berdasarkan grup
@@ -14,7 +14,7 @@ Project ini dibuat sebagai bagian dari Tugas Besar Struktur Diskrit.
 
 ---
 
-## 🛠 Teknologi
+Teknologi
 - HTML5
 - CSS3
 - JavaScript (Vanilla JS)
@@ -22,14 +22,14 @@ Project ini dibuat sebagai bagian dari Tugas Besar Struktur Diskrit.
 
 ---
 
-## ▶️ Cara Menjalankan
+Cara Menjalankan
 1. Clone atau download repository ini
 2. Buka file `index.html` menggunakan browser
 3. Tidak membutuhkan server atau instalasi tambahan
 
 ---
 
-## 🧑‍🏫 Cara Menggunakan
+Cara Menggunakan
 1. Masukkan nama siswa pada masing-masing grup  
    (pisahkan dengan koma atau baris baru)
 2. Tentukan jumlah baris dan kolom kelas
@@ -38,12 +38,12 @@ Project ini dibuat sebagai bagian dari Tugas Besar Struktur Diskrit.
 
 ---
 
-## ⚠️ Catatan
+Catatan
 - Jika jumlah kursi lebih sedikit dari jumlah siswa, solusi tidak akan ditemukan
 - Satu siswa boleh berada dalam banyak grup
 - Solusi yang dihasilkan adalah salah satu solusi valid, bukan semua kemungkinan
 
 ---
 
-## 📌 Lisensi
+Lisensi
 Project ini dibuat untuk keperluan akademik.
