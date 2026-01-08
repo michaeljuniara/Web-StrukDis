@@ -1,6 +1,6 @@
 Pengatur Denah Tempat Duduk Anti Nyontek
 
-Aplikasi web sederhana untuk mengatur tempat duduk siswa agar siswa dari grup yang sama tidak duduk bersebelahan.
+Web sederhana untuk mengatur tempat duduk siswa agar siswa dari grup yang sama tidak duduk bersebelahan dan mengurangi resiko menyontek
 
 Fitur
 - Mengatur denah kelas berbasis baris dan kolom
