@@ -9,7 +9,7 @@ Fitur
 - Validasi input (tidak boleh minus / simbol)
 - Backtracking untuk mencari solusi tempat duduk yang valid
 
-Memakai bahsa pemrograman
+Memakai bahasa pemrograman
 - HTML5
 - CSS3
 - JavaScript (Vanilla JS)
