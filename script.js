@@ -1,82 +1,99 @@
-// Daftar nama grup/warna
-// Maksimal grup = jumlah warna
+// Array warna yang merepresentasikan grup.
+// Digunakan untuk menentukan jumlah maksimal grup yang dapat dibuat.
 const colors = [
-    { name: "Teal", hex: "#B2DFDB" },
-    { name: "Kuning", hex: "#FFF9C4" },
-    { name: "Hijau", hex: "#C8E6C9" },
-    { name: "Biru", hex: "#BBDEFB" },
-    { name: "Ungu", hex: "#E1BEE7" },
-    { name: "Oranye", hex: "#FFE0B2" },
-    { name: "Abu-abu", hex: "#ECEFF1" },
-    { name: "Pink", hex: "#F8BBD0" },
-    { name: "Lime", hex: "#F0F4C3"}
+    { name: "Merah", hex: "#ffadad" },
+    { name: "Kuning", hex: "#fdffb6" },
+    { name: "Hijau", hex: "#caffbf" },
+    { name: "Biru", hex: "#a0c4ff" },
+    { name: "Ungu", hex: "#bdb2ff" },
+    { name: "Oranye", hex: "#ffd6a5" },
+    { name: "Abu", hex: "#dcdcdc" },
+    { name: "Pink", hex: "#ffc6ff" }
 ];
 
-// Jumlah grup yang sedang aktif di halaman
+// Variabel untuk menghitung jumlah grup yang sedang aktif
 let activeCircles = 0;
 
-// Saat halaman pertama kali dibuka,
-// otomatis tambahkan 2 grup input
+// Fungsi yang dijalankan ketika halaman web selesai dimuat
 window.onload = () => {
+    // Secara default, dua grup pertama langsung ditampilkan
     addNewCircle();
     addNewCircle();
 };
 
-// Fungsi untuk menambah grup baru
+// Fungsi untuk menambahkan input grup baru
 function addNewCircle() {
 
-    // Batasi jumlah grup di halaman sesuai jumlah warna
+    // Mengecek apakah jumlah grup sudah mencapai batas maksimum
     if (activeCircles >= colors.length) {
         alert("Maksimal " + colors.length + " grup");
         return;
     }
 
+    // Mengambil data warna sesuai indeks grup yang aktif
     const color = colors[activeCircles];
 
-    // Membuat elemen input grup baru
+    // Membuat elemen div sebagai wadah grup
     const div = document.createElement("div");
     div.className = "circle-card";
+
+    // Mengisi konten grup, terdiri dari:
+    // - Indikator warna
+    // - Nama grup
+    // - Textarea untuk input nama anggota
     div.innerHTML = `
-            <div class="circle-header">
-                <span class="color-dot" style="background:${color.hex}"></span>
-                ${color.name}
-            </div>
-            <textarea id="input-${activeCircles}" placeholder="Nama dipisah koma / enter"></textarea>
-        `;
+        <div class="circle-header">
+            <span class="color-dot" style="background:${color.hex}"></span>
+            ${color.name}
+        </div>
+        <textarea id="input-${activeCircles}" placeholder="Nama dipisah koma / enter"></textarea>
+    `;
+
+    // Menambahkan elemen grup ke dalam container pada halaman
     document.getElementById("inputContainer").appendChild(div);
+
+    // Menambah jumlah grup aktif
     activeCircles++;
 }
 
-// Membatasi input baris dan kolom hanya boleh oleh angka, tanpa huruf
+// Fungsi untuk memvalidasi input angka agar hanya berisi digit
 function preventInvalidNumberInput(input) {
     input.value = input.value.replace(/[^0-9]/g, '');
     input.value = input.value.replace(/^0+(?=\d)/, '');
-    if (input.value === '') input.value = '0';
+
+    if (input.value === '') {
+        input.value = '0';
+    }
 }
 
-// Fungsi untuk generate tempat duduk
+// Fungsi utama untuk menghasilkan denah tempat duduk
 function generateLayout() {
 
-    // Ambil jumlah baris dan kolom
+    // Mengambil jumlah baris dan kolom dari input pengguna
+    // Operator + digunakan untuk mengonversi string menjadi number
     const rows = +document.getElementById("rows").value;
     const cols = +document.getElementById("cols").value;
 
-    // Menyimpan data siswa unik
-    // key = nama siswa (lower case)
+    // Objek untuk menyimpan data siswa secara unik (menghindari duplikasi)
     let studentMap = {};
 
-    // Membaca input dari setiap grup
+    // Membaca input nama siswa dari setiap grup
     for (let i = 0; i < activeCircles; i++) {
+
         const raw = document.getElementById(`input-${i}`).value;
 
-        // Pisahkan nama berdasarkan koma atau enter
-        const names = raw.split(/[\n,]+/).map(x => x.trim()).filter(Boolean);
+        // Memisahkan nama berdasarkan koma atau baris baru
+        const names = raw
+            .split(/[\n,]+/)
+            .map(x => x.trim())
+            .filter(Boolean);
 
         names.forEach(name => {
 
+            // Menggunakan lowercase sebagai key agar tidak terjadi duplikasi nama
             const key = name.toLowerCase();
 
-            // Jika siswa belum terdaftar, buat data beru
+            // Jika siswa belum terdaftar, buat entri baru
             if (!studentMap[key]) {
                 studentMap[key] = {
                     displayName: name,
@@ -85,65 +102,73 @@ function generateLayout() {
                 };
             }
 
-            // Tambahkan grup jika belum ada
+            // Menambahkan grup dan warna jika belum tercatat
             if (!studentMap[key].groups.includes(colors[i].name)) {
                 studentMap[key].groups.push(colors[i].name);
                 studentMap[key].hexColors.push(colors[i].hex);
             }
         });
     }
-    // Ubah map menjadi array siswa
+
+    // Mengubah objek studentMap menjadi array agar dapat diproses lebih lanjut
     const students = Object.values(studentMap);
 
-    // Urutkan siswa 
+    // Mengurutkan siswa berdasarkan jumlah grup (prioritas lebih tinggi untuk siswa dengan banyak konflik)
     students.sort((a, b) => b.groups.length - a.groups.length);
 
+    // Memanggil fungsi untuk menyusun denah tempat duduk
     renderGridSafe(students, rows, cols);
 }
 
-// Fungsi untuk render grid dan backtracking
+// Fungsi untuk menyusun dan menampilkan denah tempat duduk secara aman
 function renderGridSafe(students, rows, cols) {
+
     const classroom = document.getElementById("classroom");
+
+    // Mengosongkan tampilan kelas sebelum menghasilkan denah baru
     classroom.innerHTML = "";
 
-    // Cek apakah kursi cukup 
+    // Mengecek apakah jumlah kursi mencukupi
     if (rows * cols < students.length) {
         alert(`Jumlah kursi (${rows * cols}) kurang dari jumlah siswa (${students.length})!`);
         return;
     }
 
+    // Mengatur jumlah kolom grid pada tampilan kelas
     classroom.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
     const total = rows * cols;
+
+    // Array untuk merepresentasikan kursi (null berarti kosong)
     let grid = Array(total).fill(null);
 
-    // Fungsi untuk mengecek konflik antar siswa
+    // Fungsi untuk mengecek konflik antar dua siswa
+    // Konflik terjadi jika keduanya berada dalam grup yang sama
     function hasConflict(studentA, studentB) {
+        if (!studentA || !studentB) return false;
 
-        if (!studentA || !studentB) {
-            return false;
-        }
-
-        const intersection = studentA.groups.filter(group => studentB.groups.includes(group));
-
-        return intersection.length > 0;
+        return studentA.groups.some(group =>
+            studentB.groups.includes(group)
+        );
     }
 
-    // Cek apakah posisi valid
+    // Fungsi untuk mengecek apakah suatu posisi kursi valid
     function isValid(pos, studentToPlace) {
+
         const r = Math.floor(pos / cols);
         const c = pos % cols;
 
+        // Daftar posisi kursi yang bersebelahan
         const neighbors = [
-            [r - 1, c], // Atas
-            [r + 1, c], // Bawah
-            [r, c - 1], // Kiri
-            [r, c + 1]  // Kanan
+            [r - 1, c], // atas
+            [r + 1, c], // bawah
+            [r, c - 1], // kiri
+            [r, c + 1]  // kanan
         ];
 
         return neighbors.every(([nr, nc]) => {
-            
-            // Jika di luar grid, aman
+
+            // Posisi di luar grid dianggap aman
             if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) {
                 return true;
             }
@@ -151,75 +176,71 @@ function renderGridSafe(students, rows, cols) {
             const idx = nr * cols + nc;
             const neighbor = grid[idx];
 
-            // Jika kosong, aman
-            if (!neighbor) {
-                return true;
-            }
+            // Kursi kosong tidak menimbulkan konflik
+            if (!neighbor) return true;
 
-            // Tidak boleh ada konflik grup 
+            // Kursi valid jika tidak terjadi konflik grup
             return !hasConflict(studentToPlace, neighbor);
         });
     }
-        // Funsi untuk backtrack
-        function backtrack(index) {
-            
-            // Semua siswa berhasil di tempatkan
-            if (index === students.length) {
-                return true;
-            }
 
-            for (let pos = 0; pos < total; pos++) {
-                if (!grid[pos] && isValid(pos, students[index])) {
-                    grid[pos] = students[index];
+    // Algoritma backtracking untuk mencari susunan tempat duduk yang valid
+    function backtrack(index) {
 
-                    if (backtrack(index + 1)) {
-                        return true; 
-                    }
-                    
-                    // Undo (Backtrack)
-                    grid[pos] = null; 
-                }
-            }
-            return false;
+        // Basis rekursi: semua siswa telah ditempatkan
+        if (index === students.length) {
+            return true;
         }
 
-    // Jika tidak ada solusi
+        for (let pos = 0; pos < total; pos++) {
+            if (!grid[pos] && isValid(pos, students[index])) {
+
+                // Menempatkan siswa pada posisi tertentu
+                grid[pos] = students[index];
+
+                // Rekursi untuk siswa berikutnya
+                if (backtrack(index + 1)) {
+                    return true;
+                }
+
+                // Jika gagal, batalkan penempatan (backtrack)
+                grid[pos] = null;
+            }
+        }
+        return false;
+    }
+
+    // Jika tidak ditemukan solusi
     if (!backtrack(0)) {
         alert("❌ Tidak ada solusi valid! Coba perbesar ukuran kelas atau kurangi siswa dengan grup ganda.");
         return;
     }
 
-    // Tampilkan hasil ke layar
+    // Menampilkan hasil denah ke halaman web
     for (let i = 0; i < total; i++) {
+
         const desk = document.createElement("div");
         const data = grid[i];
+
         if (data) {
             desk.className = "desk";
 
-            // Warna tunggal atau gradasi jika multi-grup
+            // Satu grup menggunakan satu warna,
+            // lebih dari satu grup ditampilkan dengan gradasi warna
             if (data.hexColors.length === 1) {
                 desk.style.backgroundColor = data.hexColors[0];
             } else {
                 desk.style.background = `linear-gradient(135deg, ${data.hexColors.join(", ")})`;
             }
 
-            const fullGroupLabel = data.groups.join(", ");
+            const groupsLabel = data.groups.join(" & ");
+
             desk.innerHTML = `
                 <span class="student-name">${data.displayName}</span>
-                <span class="circle-label clickable" title="Klik untuk lihat semua grup">
-                    ${fullGroupLabel}
-                </span>
+                <span class="circle-label" title="${groupsLabel}">${groupsLabel}</span>
             `;
-
-            // Klik untuk detail siswa
-            desk.querySelector(".circle-label").onclick = (e) => {
-                e.stopPropagation();
-                alert(`Nama: ${data.displayName}\nGrup: ${fullGroupLabel}`);
-            };
-        }
-
-        else {
-            // Kursi kosong
+        } else {
+            // Tampilan kursi kosong
             desk.className = "desk empty-desk";
             desk.innerHTML = `<span style="font-size:12px">Kosong</span>`;
         }
